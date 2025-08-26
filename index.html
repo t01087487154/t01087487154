@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>학급 회의 시스템</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6fa;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      color: #2c3e50;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0px 3px 10px rgba(0,0,0,0.1);
+    }
+    .agenda-input {
+      display: flex;
+      margin-bottom: 20px;
+    }
+    .agenda-input input {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    .agenda-input button {
+      margin-left: 10px;
+      padding: 10px 15px;
+      border: none;
+      background: #3498db;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .agenda {
+      margin: 10px 0;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+    }
+    .votes {
+      margin-top: 10px;
+    }
+    .votes button {
+      margin-right: 10px;
+      padding: 5px 10px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .yes { background: #2ecc71; color: white; }
+    .no { background: #e74c3c; color: white; }
+    .result {
+      margin-top: 5px;
+      font-size: 14px;
+      color: #555;
+    }
+    #minutes {
+      margin-top: 30px;
+      padding: 15px;
+      border: 1px dashed #aaa;
+      background: #fdfdfd;
+    }
+    canvas {
+      margin-top: 30px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📌 학급 회의 시스템</h1>
+    
+    <!-- 안건 제안 -->
+    <div class="agenda-input">
+      <input type="text" id="agendaText" placeholder="안건을 입력하세요">
+      <button onclick="addAgenda()">안건 추가</button>
+    </div>
+    
+    <!-- 안건 리스트 -->
+    <div id="agendaList"></div>
+
+    <!-- 회의록 -->
+    <h2>📝 회의록</h2>
+    <div id="minutes">
+      아직 기록된 회의 내용이 없습니다.
+    </div>
+
+    <!-- 그래프 -->
+    <h2>📊 투표 결과 그래프</h2>
+    <canvas id="voteChart" height="120"></canvas>
+  </div>
+
+  <script>
+    let agendas = [];
+    let chart;
+
+    function addAgenda() {
+      const text = document.getElementById("agendaText").value;
+      if (text.trim() === "") return alert("안건을 입력해주세요!");
+      
+      const agenda = { text, yes: 0, no: 0 };
+      agendas.push(agenda);
+      document.getElementById("agendaText").value = "";
+      renderAgendas();
+      updateMinutes();
+      updateChart();
+    }
+
+    function vote(index, type) {
+      if (type === "yes") agendas[index].yes++;
+      else agendas[index].no++;
+      renderAgendas();
+      updateMinutes();
+      updateChart();
+    }
+
+    function renderAgendas() {
+      const list = document.getElementById("agendaList");
+      list.innerHTML = "";
+      agendas.forEach((a, i) => {
+        list.innerHTML += `
+          <div class="agenda">
+            <b>안건:</b> ${a.text}
+            <div class="votes">
+              <button class="yes" onclick="vote(${i}, 'yes')">찬성 👍</button>
+              <button class="no" onclick="vote(${i}, 'no')">반대 👎</button>
+            </div>
+            <div class="result">
+              결과: 찬성 ${a.yes}명 | 반대 ${a.no}명
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    function updateMinutes() {
+      const minutes = document.getElementById("minutes");
+      if (agendas.length === 0) {
+        minutes.innerHTML = "아직 기록된 회의 내용이 없습니다.";
+        return;
+      }
+      let html = "";
+      agendas.forEach((a, i) => {
+        html += `<p><b>${i+1}번 안건:</b> ${a.text}  
+        → 찬성 ${a.yes}명 | 반대 ${a.no}명</p>`;
+      });
+      minutes.innerHTML = html;
+    }
+
+    function updateChart() {
+      const ctx = document.getElementById("voteChart").getContext("2d");
+      const labels = agendas.map((a, i) => `${i+1}안건: ${a.text}`);
+      const yesData = agendas.map(a => a.yes);
+      const noData = agendas.map(a => a.no);
+
+      if (chart) chart.destroy(); // 기존 차트 초기화
+
+      chart = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: "찬성",
+              data: yesData,
+              backgroundColor: "#2ecc71"
+            },
+            {
+              label: "반대",
+              data: noData,
+              backgroundColor: "#e74c3c"
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: "top" },
+            title: { display: false }
+          },
+          scales: {
+            y: { beginAtZero: true }
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>
